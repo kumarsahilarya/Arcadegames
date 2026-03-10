@@ -103,6 +103,55 @@
             from { transform: scale(1); }
             to { transform: scale(1.1); }
         }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            display: none; /* Hidden by default on desktop */
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .d-pad {
+            display: inline-grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
+        }
+
+        .d-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(0, 255, 0, 0.5);
+            border-radius: 12px;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s;
+        }
+
+        .d-btn:active {
+            background: rgba(0, 255, 0, 0.3);
+            transform: scale(0.95);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: block;
+            }
+            canvas {
+                width: 95vw;
+                height: auto;
+            }
+        }
     </style>
 </head>
 
@@ -116,6 +165,16 @@
         <button onclick="startGame()">Start Game</button>
         <button onclick="pauseGame()">Pause/Resume</button>
         <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <!-- Mobile Navigation Controls -->
+    <div class="mobile-controls">
+        <div class="d-pad">
+            <div class="d-btn btn-up" onclick="setDirection('UP')">⬆️</div>
+            <div class="d-btn btn-left" onclick="setDirection('LEFT')">⬅️</div>
+            <div class="d-btn btn-right" onclick="setDirection('RIGHT')">➡️</div>
+            <div class="d-btn btn-down" onclick="setDirection('DOWN')">⬇️</div>
+        </div>
     </div>
 
     <!-- Game Over Screen Overlay -->
@@ -144,11 +203,18 @@
         let playerName = "";
 
         document.addEventListener("keydown", e => {
-            if (e.key === "ArrowUp" && dir !== "DOWN") dir = "UP";
-            if (e.key === "ArrowDown" && dir !== "UP") dir = "DOWN";
-            if (e.key === "ArrowLeft" && dir !== "RIGHT") dir = "LEFT";
-            if (e.key === "ArrowRight" && dir !== "LEFT") dir = "RIGHT";
+            if (e.key === "ArrowUp") setDirection("UP");
+            if (e.key === "ArrowDown") setDirection("DOWN");
+            if (e.key === "ArrowLeft") setDirection("LEFT");
+            if (e.key === "ArrowRight") setDirection("RIGHT");
         });
+
+        function setDirection(newDir) {
+            if (newDir === "UP" && dir !== "DOWN") dir = "UP";
+            if (newDir === "DOWN" && dir !== "UP") dir = "DOWN";
+            if (newDir === "LEFT" && dir !== "RIGHT") dir = "LEFT";
+            if (newDir === "RIGHT" && dir !== "LEFT") dir = "RIGHT";
+        }
 
         function init() {
             snake = [{ x: 200, y: 200 }];
