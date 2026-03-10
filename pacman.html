@@ -467,6 +467,60 @@
             transform: translateY(4px);
             box-shadow: none;
         }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            display: none;
+            margin-top: 20px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 10px;
+        }
+
+        .d-btn {
+            background: rgba(255, 255, 0, 0.1);
+            border: 2px solid rgba(255, 255, 0, 0.5);
+            border-radius: 12px;
+            color: #FFFF00;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s;
+        }
+
+        .d-btn:active {
+            background: rgba(255, 255, 0, 0.3);
+            transform: scale(0.95);
+        }
+
+        .btn-up { grid-column: 2; grid-row: 1; }
+        .btn-left { grid-column: 1; grid-row: 2; }
+        .btn-right { grid-column: 3; grid-row: 2; }
+        .btn-down { grid-column: 2; grid-row: 3; }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: flex;
+            }
+            .header, .footer {
+                width: 95vw;
+                max-width: 440px;
+            }
+            #game-wrapper {
+                transform: scale(0.85); /* Scale down map to fit on screen */
+                margin: -20px 0;
+            }
+        }
     </style>
 </head>
 
@@ -543,6 +597,16 @@
         <div class="controls-info">
             USE <span class="key">↑</span> <span class="key">↓</span> <span class="key">←</span> <span
                 class="key">→</span>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Controls -->
+    <div class="mobile-controls">
+        <div class="d-pad">
+            <div class="d-btn btn-up" onmousedown="setDir(0, -1)" ontouchstart="setDir(0, -1); event.preventDefault();">⬆️</div>
+            <div class="d-btn btn-left" onmousedown="setDir(-1, 0)" ontouchstart="setDir(-1, 0); event.preventDefault();">⬅️</div>
+            <div class="d-btn btn-right" onmousedown="setDir(1, 0)" ontouchstart="setDir(1, 0); event.preventDefault();">➡️</div>
+            <div class="d-btn btn-down" onmousedown="setDir(0, 1)" ontouchstart="setDir(0, 1); event.preventDefault();">⬇️</div>
         </div>
     </div>
 
@@ -1035,10 +1099,17 @@
             }
 
             switch (e.key) {
-                case 'ArrowUp': case 'w': case 'W': if (isPlaying) { pacman.nextDx = 0; pacman.nextDy = -1; } break;
-                case 'ArrowDown': case 's': case 'S': if (isPlaying) { pacman.nextDx = 0; pacman.nextDy = 1; } break;
-                case 'ArrowLeft': case 'a': case 'A': if (isPlaying) { pacman.nextDx = -1; pacman.nextDy = 0; } break;
-                case 'ArrowRight': case 'd': case 'D': if (isPlaying) { pacman.nextDx = 1; pacman.nextDy = 0; } break;
+                case 'ArrowUp': case 'w': case 'W': setDir(0, -1); break;
+                case 'ArrowDown': case 's': case 'S': setDir(0, 1); break;
+                case 'ArrowLeft': case 'a': case 'A': setDir(-1, 0); break;
+                case 'ArrowRight': case 'd': case 'D': setDir(1, 0); break;
+            }
+        }
+
+        function setDir(dx, dy) {
+            if (isPlaying) {
+                pacman.nextDx = dx; 
+                pacman.nextDy = dy; 
             }
         }
 
