@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Hub - All Games</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e130c, #9a8478);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 5px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 2px 2px 4px rgba(0,0,0,0.5);
+            color: #ffd700;
+        }
+
+        p.subtitle {
+            font-size: 1.2rem;
+            color: #e0e0e0;
+            margin-top: 0;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            max-width: 1200px;
+            padding: 0 20px 50px 20px;
+        }
+
+        .game-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            width: 250px;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-15px) scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            border-color: rgba(255, 255, 255, 0.4);
+            z-index: 10;
+        }
+
+        /* Shine effect on hover */
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%);
+            transform: skewX(-25deg);
+            transition: 0.5s;
+        }
+
+        .game-card:hover::before {
+            left: 200%;
+        }
+
+        .icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover .icon {
+            transform: scale(1.1);
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            letter-spacing: 1px;
+            padding: 0 10px;
+        }
+        
+        /* Custom Colors for each card based on game theme */
+        .card-snake:hover { background: linear-gradient(135deg, #0f2027, #2c5364); }
+        .card-ludo:hover { background: linear-gradient(135deg, #e52d27, #b31217); }
+        .card-chess:hover { background: linear-gradient(135deg, #434343, #000000); }
+        .card-pacman:hover { background: linear-gradient(135deg, #fceb00, #ff8a00); color: #000; }
+        .card-stp:hover { background: linear-gradient(135deg, #6dd5ed, #2193b0); }
+        .card-dotbox:hover { background: linear-gradient(135deg, #11998e, #38ef7d); }
+
+        .card-coming-soon {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            cursor: default;
+        }
+        
+        .card-coming-soon:hover {
+            transform: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .card-coming-soon .icon {
+            color: rgba(255, 255, 255, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 0.5; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 Arcade Hub</h1>
+        <p class="subtitle">Choose your next adventure</p>
+    </header>
+
+    <div class="container">
+        
+        <a href="snake.html" class="game-card card-snake">
+            <div class="icon">🐍</div>
+            <div class="game-title">Classic Snake</div>
+        </a>
+
+        <a href="ludo.html" class="game-card card-ludo">
+            <div class="icon">🎲</div>
+            <div class="game-title">Ludo Multiplayer</div>
+        </a>
+
+        <a href="chess.html" class="game-card card-chess">
+            <div class="icon">♟️</div>
+            <div class="game-title">Grandmaster Chess</div>
+        </a>
+
+        <a href="pacman.html" class="game-card card-pacman">
+            <div class="icon">🟡</div>
+            <div class="game-title">Pac-Man Clone</div>
+        </a>
+
+        <a href="stp.html" class="game-card card-stp">
+            <div class="icon">✊✋✌️</div>
+            <div class="game-title">Stone Paper Scissors</div>
+        </a>
+
+        <a href="dotbox.html" class="game-card card-dotbox">
+            <div class="icon">🔲</div>
+            <div class="game-title">Dots & Boxes</div>
+        </a>
+
+        <!-- Coming Soon Card -->
+        <div class="game-card card-coming-soon">
+            <div class="icon">⏳</div>
+            <div class="game-title">New Game<br>Coming Soon</div>
+        </div>
+
+    </div>
+
+</body>
+</html>

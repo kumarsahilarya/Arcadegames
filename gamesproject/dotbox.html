@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dots & Boxes - Premium Edition</title>
+    <!-- Use Google Fonts for dynamic modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: rgba(30, 41, 59, 0.8);
+            --p1-color: #00f2fe;
+            /* Neon Cyan */
+            --p1-glow: 0 0 20px rgba(0, 242, 254, 0.7);
+            --p2-color: #fe0979;
+            /* Neon Magenta */
+            --p2-glow: 0 0 20px rgba(254, 9, 121, 0.7);
+            --dot-color: #e2e8f0;
+            --line-idle: rgba(148, 163, 184, 0.15);
+            --board-padding: 30px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--p1-color), var(--p2-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            text-shadow: 0 10px 20px rgba(0, 0, 0, 0.467);
+            display: inline-block;
+        }
+
+        .score-board {
+            display: flex;
+            gap: 50px;
+            background: var(--surface-color);
+            padding: 20px 50px;
+            border-radius: 25px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .player {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease;
+        }
+
+        .player.inactive {
+            filter: grayscale(1) opacity(0.3);
+            transform: scale(0.85);
+        }
+
+        .player-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player1 .player-name {
+            color: var(--p1-color);
+            text-shadow: var(--p1-glow);
+        }
+
+        .player2 .player-name {
+            color: var(--p2-color);
+            text-shadow: var(--p2-glow);
+        }
+
+        .score {
+            font-size: 3rem;
+            font-weight: 800;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .game-container {
+            background: var(--surface-color);
+            padding: var(--board-padding);
+            border-radius: 25px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+            animation: zoomIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        #board {
+            display: grid;
+            /* Will be set dynamically by JS */
+        }
+
+        .dot {
+            background-color: var(--dot-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.8), inset 0 0 5px rgba(0, 0, 0, 0.5);
+            place-self: center;
+            z-index: 3;
+        }
+
+        .line {
+            background-color: var(--line-idle);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .line-h {
+            width: 100%;
+            height: 14px;
+            align-self: center;
+            border-radius: 7px;
+        }
+
+        .line-v {
+            height: 100%;
+            width: 14px;
+            justify-self: center;
+            border-radius: 7px;
+        }
+
+        .line.active.player1 {
+            background-color: var(--p1-color);
+            box-shadow: var(--p1-glow);
+            z-index: 2;
+        }
+
+        .line.active.player2 {
+            background-color: var(--p2-color);
+            box-shadow: var(--p2-glow);
+            z-index: 2;
+        }
+
+        .line:not(.active):hover {
+            background-color: var(--line-hover);
+            transform: scale(1.05);
+            z-index: 2;
+        }
+
+        .box {
+            border-radius: 8px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            opacity: 0;
+            transform: scale(0.3);
+            z-index: 0;
+        }
+
+        .box.claimed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .box.player1 {
+            background-color: rgba(0, 242, 254, 0.15);
+            box-shadow: inset 0 0 25px rgba(0, 242, 254, 0.3);
+            color: var(--p1-color);
+            text-shadow: var(--p1-glow);
+        }
+
+        .box.player2 {
+            background-color: rgba(254, 9, 121, 0.15);
+            box-shadow: inset 0 0 25px rgba(254, 9, 121, 0.3);
+            color: var(--p2-color);
+            text-shadow: var(--p2-glow);
+        }
+
+        .controls {
+            margin-top: 40px;
+            animation: fadeInUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-restart::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: skewX(-20deg);
+            transition: 0.5s;
+        }
+
+        .btn-restart:hover::before {
+            left: 150%;
+        }
+
+        .btn-restart:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-restart:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Setup Modal */
+        .setup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(15px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            transition: opacity 0.5s ease;
+        }
+
+        .setup-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .setup-modal {
+            background: var(--surface-color);
+            padding: 50px 40px;
+            border-radius: 25px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transform: scale(1);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .setup-overlay.hidden .setup-modal {
+            transform: scale(0.8) translateY(50px);
+        }
+
+        .setup-title {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            background: linear-gradient(to right, var(--p1-color), var(--p2-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        .input-group input,
+        .input-group select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            color: white;
+            padding: 16px 20px;
+            font-size: 1.2rem;
+            border-radius: 12px;
+            width: 100%;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .input-group select {
+            cursor: pointer;
+        }
+
+        .input-group select option {
+            background: #0f172a;
+            color: white;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(0, 0, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, var(--p1-color), var(--p2-color));
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            width: 100%;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-start:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.85);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Winner Modal overlay */
+        .winner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            z-index: 100;
+        }
+
+        .winner-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .winner-text {
+            font-size: 5rem;
+            font-weight: 800;
+            margin-bottom: 40px;
+            text-align: center;
+            line-height: 1.2;
+            opacity: 0;
+            transform: scale(0.5) rotate(-10deg);
+        }
+
+        @keyframes winnerPop {
+            0% {
+                transform: scale(0.5) rotate(-10deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.1) rotate(5deg);
+                opacity: 1;
+            }
+
+            75% {
+                transform: scale(0.95) rotate(-2deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .winner-overlay.active .winner-text {
+            animation: winnerPop 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 99;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="setup-overlay" id="setup-overlay">
+        <div class="setup-modal">
+            <h2 class="setup-title">Setup Match</h2>
+            <div class="input-group">
+                <select id="game-mode">
+                    <option value="pvp">Player vs Player</option>
+                    <option value="pvc">Player vs Computer</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <input type="text" id="p1-input" placeholder="Player 1 Name" maxlength="12" value="Player 1"
+                    autocomplete="off">
+            </div>
+            <div class="input-group" id="p2-input-group">
+                <input type="text" id="p2-input" placeholder="Player 2 Name" maxlength="12" value="Player 2"
+                    autocomplete="off">
+            </div>
+            <button class="btn-start" id="btn-start">Let's Play</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1 class="title">Dots & Boxes</h1>
+        <div class="score-board">
+            <div class="player player1" id="p1-panel">
+                <div class="player-name" id="p1-label">Player 1</div>
+                <div class="score" id="score-1">0</div>
+            </div>
+            <div class="player player2 inactive" id="p2-panel">
+                <div class="player-name" id="p2-label">Player 2</div>
+                <div class="score" id="score-2">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div id="board"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-restart" id="btn-restart">Restart Game</button>
+    </div>
+
+    <div class="winner-overlay" id="winner-overlay">
+        <div class="winner-text" id="winner-text">Player 1 Wins!</div>
+        <button class="btn-restart" id="btn-play-again">Play Again</button>
+    </div>
+
+    <script>
+        const ROWS = 6; // Number of dots vertically
+        const COLS = 6; // Number of dots horizontally
+        const DOT_SIZE = 14; // px
+        const BOX_SIZE = 65; // px
+
+        const boardEl = document.getElementById('board');
+        const score1El = document.getElementById('score-1');
+        const score2El = document.getElementById('score-2');
+        const p1Panel = document.getElementById('p1-panel');
+        const p2Panel = document.getElementById('p2-panel');
+        const p1Label = document.getElementById('p1-label');
+        const p2Label = document.getElementById('p2-label');
+        const p1Input = document.getElementById('p1-input');
+        const p2Input = document.getElementById('p2-input');
+        const setupOverlay = document.getElementById('setup-overlay');
+        const startBtn = document.getElementById('btn-start');
+        const restartBtn = document.getElementById('btn-restart');
+        const playAgainBtn = document.getElementById('btn-play-again');
+        const winnerOverlay = document.getElementById('winner-overlay');
+        const winnerText = document.getElementById('winner-text');
+        const gameModeSelect = document.getElementById('game-mode');
+        const p2InputGroup = document.getElementById('p2-input-group');
+
+        let p1Name = "Player 1";
+        let p2Name = "Player 2";
+        let currentPlayer = 1;
+        let score1 = 0;
+        let score2 = 0;
+        let linesData = {}; // key: "r,c", value: true (if active)
+        let boxesData = {}; // key: "r,c" (of top-left dot), value: player
+        let isPvC = false;
+        let isComputerThinking = false;
+
+        gameModeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'pvc') {
+                p2InputGroup.style.display = 'none';
+            } else {
+                p2InputGroup.style.display = 'block';
+            }
+        });
+
+        // Start button handler
+        startBtn.addEventListener('click', () => {
+            isPvC = gameModeSelect.value === 'pvc';
+            p1Name = p1Input.value.trim() || "Player 1";
+            p2Name = isPvC ? "Computer" : (p2Input.value.trim() || "Player 2");
+            p1Label.textContent = p1Name;
+            p2Label.textContent = p2Name;
+            setupOverlay.classList.add('hidden');
+            initGame();
+        });
+
+        function initGame() {
+            boardEl.innerHTML = '';
+            currentPlayer = 1;
+            score1 = 0;
+            score2 = 0;
+            linesData = {};
+            boxesData = {};
+
+            updateScores();
+            updateTurnUI();
+
+            winnerOverlay.classList.remove('active');
+
+            // Setup grid template
+            let colsTemplate = '';
+            for (let i = 0; i < COLS; i++) {
+                colsTemplate += `${DOT_SIZE}px `;
+                if (i < COLS - 1) colsTemplate += `${BOX_SIZE}px `;
+            }
+            boardEl.style.gridTemplateColumns = colsTemplate.trim();
+
+            let rowsTemplate = '';
+            for (let i = 0; i < ROWS; i++) {
+                rowsTemplate += `${DOT_SIZE}px `;
+                if (i < ROWS - 1) rowsTemplate += `${BOX_SIZE}px `;
+            }
+            boardEl.style.gridTemplateRows = rowsTemplate.trim();
+
+            // Populate grid
+            // Grid positions logic:
+            // r = 0 to (ROWS * 2 - 2)
+            // c = 0 to (COLS * 2 - 2)
+            for (let r = 0; r < ROWS * 2 - 1; r++) {
+                for (let c = 0; c < COLS * 2 - 1; c++) {
+                    const el = document.createElement('div');
+
+                    if (r % 2 === 0 && c % 2 === 0) {
+                        // Dot
+                        el.className = 'dot';
+                        el.style.width = `${DOT_SIZE}px`;
+                        el.style.height = `${DOT_SIZE}px`;
+                    } else if (r % 2 === 0 && c % 2 !== 0) {
+                        // Horizontal Line
+                        el.className = 'line line-h';
+                        el.dataset.r = r;
+                        el.dataset.c = c;
+                        el.addEventListener('click', onLineClick);
+                    } else if (r % 2 !== 0 && c % 2 === 0) {
+                        // Vertical Line
+                        el.className = 'line line-v';
+                        el.dataset.r = r;
+                        el.dataset.c = c;
+                        el.addEventListener('click', onLineClick);
+                    } else {
+                        // Box
+                        el.className = 'box';
+                        el.id = `box-${r}-${c}`;
+                    }
+                    boardEl.appendChild(el);
+                }
+            }
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.background = color;
+                particle.style.boxShadow = `0 0 10px ${color}`;
+                const size = Math.random() * 6 + 4;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${x}px`;
+                particle.style.top = `${y}px`;
+
+                document.body.appendChild(particle);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 40 + 20;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+
+                particle.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 600 + Math.random() * 200,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => particle.remove();
+            }
+        }
+
+        function onLineClick(e) {
+            if (isComputerThinking) return;
+            if (isPvC && currentPlayer === 2) return;
+
+            const line = e.target;
+            const r = parseInt(line.dataset.r);
+            const c = parseInt(line.dataset.c);
+
+            processMove(line, r, c);
+        }
+
+        function processMove(line, r, c) {
+            const key = `${r},${c}`;
+            if (linesData[key]) return; // Already clicked
+
+            // Mark line as active
+            linesData[key] = true;
+            line.classList.add('active', `player${currentPlayer}`);
+
+            // Particle effect on click line center
+            const rect = line.getBoundingClientRect();
+            const color = currentPlayer === 1 ? '#00f2fe' : '#fe0979';
+            createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, color);
+
+            // Check if this line completes any box
+            let boxCompleted = false;
+
+            if (r % 2 === 0) { // Horizontal line
+                if (r - 1 > 0 && checkBox(r - 1, c)) boxCompleted = true;
+                if (r + 1 < ROWS * 2 - 1 && checkBox(r + 1, c)) boxCompleted = true;
+            } else { // Vertical line
+                if (c - 1 > 0 && checkBox(r, c - 1)) boxCompleted = true;
+                if (c + 1 < COLS * 2 - 1 && checkBox(r, c + 1)) boxCompleted = true;
+            }
+
+            const totalBoxes = (ROWS - 1) * (COLS - 1);
+            const isGameOver = (score1 + score2) === totalBoxes;
+
+            if (boxCompleted) {
+                // Keep turn, check win condition
+                updateScores();
+                checkWin();
+                if (isPvC && currentPlayer === 2 && !isGameOver) {
+                    setTimeout(computerMove, 600);
+                }
+            } else {
+                // Switch turn
+                currentPlayer = currentPlayer === 1 ? 2 : 1;
+                updateTurnUI();
+                if (isPvC && currentPlayer === 2 && !isGameOver) {
+                    setTimeout(computerMove, 600);
+                }
+            }
+        }
+
+        function checkBox(r, c) {
+            // Box is at (r,c) where both are odd
+            const top = `${r - 1},${c}`;
+            const bottom = `${r + 1},${c}`;
+            const left = `${r},${c - 1}`;
+            const right = `${r},${c + 1}`;
+
+            if (linesData[top] && linesData[bottom] && linesData[left] && linesData[right]) {
+                // Claim Box
+                const boxEl = document.getElementById(`box-${r}-${c}`);
+                boxEl.classList.add('claimed', `player${currentPlayer}`);
+                boxEl.innerHTML = currentPlayer === 1 ? 'P1' : 'P2';
+
+                // Particle boom from box center
+                const rect = boxEl.getBoundingClientRect();
+                const color = currentPlayer === 1 ? '#00f2fe' : '#fe0979';
+                setTimeout(() => {
+                    createParticles(rect.left + rect.width / 2, rect.top + rect.height / 2, color);
+                }, 150);
+
+                boxesData[`${r},${c}`] = currentPlayer;
+                if (currentPlayer === 1) score1++;
+                else score2++;
+
+                return true;
+            }
+            return false;
+        }
+
+        function updateScores() {
+            score1El.textContent = score1;
+            score2El.textContent = score2;
+
+            // Pop effect
+            const el = currentPlayer === 1 ? score1El : score2El;
+            el.style.transform = 'scale(1.4)';
+            setTimeout(() => el.style.transform = 'scale(1)', 300);
+        }
+
+        function updateTurnUI() {
+            if (currentPlayer === 1) {
+                p1Panel.classList.remove('inactive');
+                p2Panel.classList.add('inactive');
+            } else {
+                p2Panel.classList.remove('inactive');
+                p1Panel.classList.add('inactive');
+            }
+
+            // Update css variables for hover pseudo-element coloring
+            const root = document.documentElement;
+            if (currentPlayer === 1) {
+                root.style.setProperty('--line-hover', 'rgba(0, 242, 254, 0.4)');
+            } else {
+                root.style.setProperty('--line-hover', 'rgba(254, 9, 121, 0.4)');
+            }
+        }
+
+        function getBoxLinesCount(br, bc) {
+            let count = 0;
+            if (linesData[`${br - 1},${bc}`]) count++;
+            if (linesData[`${br + 1},${bc}`]) count++;
+            if (linesData[`${br},${bc - 1}`]) count++;
+            if (linesData[`${br},${bc + 1}`]) count++;
+            return count;
+        }
+
+        function makesBox(lr, lc) {
+            if (lr % 2 === 0) {
+                if (lr - 1 > 0 && getBoxLinesCount(lr - 1, lc) === 3) return true;
+                if (lr + 1 < ROWS * 2 - 1 && getBoxLinesCount(lr + 1, lc) === 3) return true;
+            } else {
+                if (lc - 1 > 0 && getBoxLinesCount(lr, lc - 1) === 3) return true;
+                if (lc + 1 < COLS * 2 - 1 && getBoxLinesCount(lr, lc + 1) === 3) return true;
+            }
+            return false;
+        }
+
+        function isSafeMove(lr, lc) {
+            if (lr % 2 === 0) {
+                if (lr - 1 > 0 && getBoxLinesCount(lr - 1, lc) === 2) return false;
+                if (lr + 1 < ROWS * 2 - 1 && getBoxLinesCount(lr + 1, lc) === 2) return false;
+            } else {
+                if (lc - 1 > 0 && getBoxLinesCount(lr, lc - 1) === 2) return false;
+                if (lc + 1 < COLS * 2 - 1 && getBoxLinesCount(lr, lc + 1) === 2) return false;
+            }
+            return true;
+        }
+
+        function computerMove() {
+            const totalBoxes = (ROWS - 1) * (COLS - 1);
+            if (score1 + score2 === totalBoxes) return;
+
+            isComputerThinking = true;
+
+            const availableMoves = [];
+            for (let r = 0; r < ROWS * 2 - 1; r++) {
+                for (let c = 0; c < COLS * 2 - 1; c++) {
+                    if ((r % 2 === 0 && c % 2 !== 0) || (r % 2 !== 0 && c % 2 === 0)) {
+                        if (!linesData[`${r},${c}`]) {
+                            availableMoves.push({ r, c });
+                        }
+                    }
+                }
+            }
+
+            if (availableMoves.length === 0) {
+                isComputerThinking = false;
+                return;
+            }
+
+            let bestMove = null;
+
+            // 1. Can we complete a box?
+            for (const move of availableMoves) {
+                if (makesBox(move.r, move.c)) {
+                    bestMove = move;
+                    break;
+                }
+            }
+
+            // 2. Determine safe moves
+            if (!bestMove) {
+                const safeMoves = [];
+                for (const move of availableMoves) {
+                    if (isSafeMove(move.r, move.c)) {
+                        safeMoves.push(move);
+                    }
+                }
+                if (safeMoves.length > 0) {
+                    bestMove = safeMoves[Math.floor(Math.random() * safeMoves.length)];
+                } else {
+                    bestMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+                }
+            }
+
+            const lineEl = document.querySelector(`.line[data-r="${bestMove.r}"][data-c="${bestMove.c}"]`);
+            if (lineEl) {
+                isComputerThinking = false;
+                processMove(lineEl, bestMove.r, bestMove.c);
+            }
+        }
+
+        function grandExplosion() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            // Multiple bursts
+            for (let burst = 0; burst < 3; burst++) {
+                setTimeout(() => {
+                    for (let i = 0; i < 40; i++) {
+                        const px = centerX + (Math.random() - 0.5) * 200;
+                        const py = centerY + (Math.random() - 0.5) * 200;
+                        createParticles(px, py, i % 2 === 0 ? '#00f2fe' : '#fe0979');
+                    }
+                }, burst * 300);
+            }
+        }
+
+        function checkWin() {
+            const totalBoxes = (ROWS - 1) * (COLS - 1);
+            if (score1 + score2 === totalBoxes) {
+                setTimeout(() => {
+                    winnerOverlay.classList.add('active');
+                    grandExplosion();
+
+                    if (score1 > score2) {
+                        winnerText.innerHTML = `🏆<br>${p1Name}<br>Wins!`;
+                        winnerText.style.color = 'var(--p1-color)';
+                        winnerText.style.textShadow = 'var(--p1-glow)';
+                    } else if (score2 > score1) {
+                        winnerText.innerHTML = `🏆<br>${p2Name}<br>Wins!`;
+                        winnerText.style.color = 'var(--p2-color)';
+                        winnerText.style.textShadow = 'var(--p2-glow)';
+                    } else {
+                        winnerText.innerHTML = `🤝<br>It's a<br>Draw!`;
+                        winnerText.style.color = '#fff';
+                        winnerText.style.textShadow = '0 0 20px rgba(255,255,255,0.6)';
+                    }
+                }, 600);
+            }
+        }
+
+        restartBtn.addEventListener('click', () => {
+            setupOverlay.classList.remove('hidden');
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            initGame();
+        });
+
+        // Initialize completely blank board initially under overlay
+        boardEl.innerHTML = '';
+        score1El.textContent = '0';
+        score2El.textContent = '0';
+
+    </script>
+</body>
+
+</html>

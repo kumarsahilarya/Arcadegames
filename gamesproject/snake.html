@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Snake Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+        }
+
+        canvas {
+            background: #111;
+            border: 3px solid white;
+            box-shadow: 0 0 40px lime;
+            border-radius: 12px;
+            display: block;
+            margin: auto;
+        }
+
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(145deg, #00ff00, #006600);
+            color: white;
+            font-weight: bold;
+            transition: transform 0.2s ease;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+        }
+
+        #turn {
+            font-size: 22px;
+            margin: 10px;
+        }
+
+        #winner {
+            font-size: 28px;
+            color: yellow;
+            margin-top: 10px;
+        }
+
+        /* New animated Game Over Modal styles */
+        #gameOverScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1f1c2c, #928DAB);
+            padding: 50px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            animation: dropIn 0.8s cubic-bezier(0.25, 1.5, 0.5, 1);
+        }
+
+        #winnerText {
+            font-size: 50px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.6);
+            animation: pop 1s infinite alternate;
+        }
+
+        .finalScores {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: white;
+            line-height: 1.5;
+        }
+
+        @keyframes dropIn {
+            0% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pop {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🐍 Snake Game</h1>
+    <div id="status"></div>
+    <h2>Score: <span id="score">0</span></h2>
+    <canvas id="game" width="600" height="400"></canvas>
+    <div id="gameOverMsg"></div>
+    <div style="margin-top:10px;">
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="pauseGame()">Pause/Resume</button>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+
+    <!-- Game Over Screen Overlay -->
+    <div id="gameOverScreen">
+        <div class="modal-content">
+            <div id="winnerText">Game Over!</div>
+            <div class="finalScores">
+                <span id="finalUserScore">Score: 0</span><br>
+                <span id="highScoreDisplay">High Score: 0</span>
+            </div>
+            <button onclick="restartGameFromModal()">🔄 Play Again</button>
+        </div>
+    </div>
+
+    <!-- Sounds -->
+    <audio id="eatSound" src="eat.mp3"></audio>
+    <audio id="crashSound" src="crash.mp3"></audio>
+    <audio id="winSound" src="win.mp3"></audio>
+    <audio id="bgMusic" src="bgmusic.mp3" loop></audio>
+
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        let snake, dir, food, score, speed = 6, running = false;
+        let playerName = "";
+
+        document.addEventListener("keydown", e => {
+            if (e.key === "ArrowUp" && dir !== "DOWN") dir = "UP";
+            if (e.key === "ArrowDown" && dir !== "UP") dir = "DOWN";
+            if (e.key === "ArrowLeft" && dir !== "RIGHT") dir = "LEFT";
+            if (e.key === "ArrowRight" && dir !== "LEFT") dir = "RIGHT";
+        });
+
+        function init() {
+            snake = [{ x: 200, y: 200 }];
+            dir = "RIGHT";
+            score = 0;
+            document.getElementById("score").innerText = score;
+            food = { x: Math.floor(Math.random() * 30) * 20, y: Math.floor(Math.random() * 20) * 20 };
+            document.getElementById("gameOverScreen").style.display = "none";
+            document.getElementById("gameOverMsg").innerText = "";
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = "#222";
+            for (let i = 0; i < canvas.width; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+            for (let j = 0; j < canvas.height; j += 20) { ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke(); }
+        }
+
+        function drawSnake() {
+            snake.forEach((part, i) => {
+                let radius = 10; // Rounded corners for a smoother look
+                let g = ctx.createLinearGradient(part.x, part.y, part.x + 20, part.y + 20);
+                
+                // Head has a different color to stand out
+                if (i === 0) {
+                    g.addColorStop(0, "#00ffcc"); 
+                    g.addColorStop(1, "#00cc99");
+                    ctx.shadowColor = "#00ffcc"; 
+                    ctx.shadowBlur = 15;
+                } else {
+                    g.addColorStop(0, "lime"); 
+                    g.addColorStop(1, "green");
+                    // Taper the tail slightly for animation effect
+                    let scale = Math.max(0.6, 1 - (i / snake.length) * 0.4);
+                    radius = 10 * scale;
+                    // Lower shadow on tail
+                    ctx.shadowBlur = i < 5 ? 10 - i : 0; 
+                }
+
+                ctx.fillStyle = g;
+                
+                // Draw rounded rectangle for smoother snake bodies
+                ctx.beginPath();
+                ctx.roundRect(part.x + (10 - radius), part.y + (10 - radius), radius * 2, radius * 2, 6);
+                ctx.fill();
+
+                if (i === 0) { // eyes
+                    ctx.fillStyle = "white";
+                    ctx.shadowBlur = 0;
+                    ctx.beginPath();
+                    
+                    // Adjust eye position based on direction
+                    let eyeOffsetX = 5, eyeOffsetY = 5, eye2OffsetX = 15, eye2OffsetY = 5;
+                    if(dir === "DOWN") { eyeOffsetY = 15; eye2OffsetY = 15; }
+                    else if(dir === "LEFT") { eyeOffsetX = 5; eyeOffsetY = 15; eye2OffsetX = 5; eye2OffsetY = 5; }
+                    else if(dir === "RIGHT") { eyeOffsetX = 15; eyeOffsetY = 5; eye2OffsetX = 15; eye2OffsetY = 15; }
+                    
+                    ctx.arc(part.x + eyeOffsetX, part.y + eyeOffsetY, 3, 0, Math.PI * 2);
+                    ctx.arc(part.x + eye2OffsetX, part.y + eye2OffsetY, 3, 0, Math.PI * 2); 
+                    ctx.fill();
+                    
+                    // Pupils
+                    ctx.fillStyle = "black";
+                    ctx.beginPath();
+                    ctx.arc(part.x + eyeOffsetX + (dir==="RIGHT"?1:dir==="LEFT"?-1:0), part.y + eyeOffsetY + (dir==="DOWN"?1:dir==="UP"?-1:0), 1.5, 0, Math.PI * 2);
+                    ctx.arc(part.x + eye2OffsetX + (dir==="RIGHT"?1:dir==="LEFT"?-1:0), part.y + eye2OffsetY + (dir==="DOWN"?1:dir==="UP"?-1:0), 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.shadowBlur = 0;
+        }
+
+        function drawFood() {
+            let g = ctx.createRadialGradient(food.x + 10, food.y + 10, 4, food.x + 10, food.y + 10, 10);
+            g.addColorStop(0, "yellow"); g.addColorStop(1, "red");
+            ctx.fillStyle = g; ctx.shadowColor = "red"; ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.arc(food.x + 10, food.y + 10, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        function update() {
+            if (!running) return;
+
+            let head = { ...snake[0] };
+            if (dir === "UP") head.y -= 20;
+            if (dir === "DOWN") head.y += 20;
+            if (dir === "LEFT") head.x -= 20;
+            if (dir === "RIGHT") head.x += 20;
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+                score++; document.getElementById("score").innerText = score;
+                document.getElementById("eatSound").play();
+                food = { x: Math.floor(Math.random() * 30) * 20, y: Math.floor(Math.random() * 20) * 20 };
+            } else snake.pop();
+
+            if (head.x < 0 || head.y < 0 || head.x >= canvas.width || head.y >= canvas.height) gameOver();
+            for (let i = 1; i < snake.length; i++) { if (head.x === snake[i].x && head.y === snake[i].y) gameOver(); }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid(); drawSnake(); drawFood();
+        }
+
+        function loop() {
+            update(); draw();
+            if (running) setTimeout(() => requestAnimationFrame(loop), 1000 / speed);
+        }
+
+        function startGame() {
+            playerName = prompt("Enter Player Name") || "Player";
+            document.getElementById("bgMusic").play();
+            init();
+            document.getElementById("status").innerText = "Playing: " + playerName;
+            running = true; 
+            loop();
+        }
+
+        function gameOver() {
+            running = false; 
+            document.getElementById("crashSound").play();
+            
+            // Store and retrieve high score
+            let highScore = localStorage.getItem("snakeHighScore") || 0;
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem("snakeHighScore", highScore);
+            }
+            
+            // Wait a brief moment before showing modal
+            setTimeout(() => {
+                document.getElementById("gameOverScreen").style.display = "flex";
+                document.getElementById("winnerText").innerText = "Game Over, " + playerName + "!";
+                document.getElementById("finalUserScore").innerText = "Score: " + score;
+                document.getElementById("highScoreDisplay").innerText = "High Score: " + highScore;
+                
+                // Optional win sound if it's a new high score
+                if(score >= highScore && score > 0) document.getElementById("winSound").play();
+            }, 500);
+        }
+
+        function pauseGame() {
+            running = !running; if (running) loop();
+        }
+        function restartGame() {
+            running = false; init(); running = true; loop();
+        }
+        function restartGameFromModal() {
+            document.getElementById("gameOverScreen").style.display = "none";
+            restartGame();
+        }
+    </script>
+</body>
+
+</html>
